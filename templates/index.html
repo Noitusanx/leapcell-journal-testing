@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DailyDigest AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-2xl mx-auto">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">DailyDigest 📝</h1>
+        <p class="text-gray-600">Tulis jurnalmu, biarkan AI merangkumnya.</p>
+      </div>
+
+      <div class="bg-white p-6 rounded-xl shadow-md mb-8">
+        <textarea
+          id="journalInput"
+          rows="4"
+          class="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          placeholder="Ceritakan harimu di sini..."
+        ></textarea>
+        <button
+          onclick="addJournal()"
+          id="btnSubmit"
+          class="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition flex justify-center items-center"
+        >
+          <span>Simpan & Rangkum (AI)</span>
+        </button>
+      </div>
+
+      <div id="journalList" class="space-y-4">
+        {% for journal in journals %}
+        <div
+          class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 relative"
+          id="journal-{{ journal.id }}"
+        >
+          <button
+            onclick="deleteJournal({{ journal.id }})"
+            class="absolute top-4 right-4 text-red-400 hover:text-red-600 text-sm"
+          >
+            Hapus
+          </button>
+          <p class="text-gray-800 mb-2 whitespace-pre-wrap">
+            {{ journal.content }}
+          </p>
+          <div class="bg-blue-50 p-3 rounded-lg mt-3">
+            <p class="text-xs text-blue-500 font-bold uppercase tracking-wide">
+              AI Summary
+            </p>
+            <p class="text-gray-700 italic">"{{ journal.summary }}"</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <script>
+      async function addJournal() {
+        const input = document.getElementById("journalInput");
+        const btn = document.getElementById("btnSubmit");
+        const text = input.value;
+
+        if (!text) return alert("Tulis sesuatu dulu!");
+
+        // Loading state
+        btn.innerHTML = "Sedang berpikir...";
+        btn.disabled = true;
+
+        try {
+          const res = await fetch("/api/journals", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: text }),
+          });
+
+          if (res.ok) {
+            // Refresh halaman untuk melihat data baru (Simple approach)
+            window.location.reload();
+          }
+        } catch (err) {
+          alert("Error: " + err);
+        } finally {
+          btn.innerHTML = "Simpan & Rangkum (AI)";
+          btn.disabled = false;
+        }
+      }
+
+      async function deleteJournal(id) {
+        if (!confirm("Hapus jurnal ini?")) return;
+
+        await fetch(`/api/journals/${id}`, { method: "DELETE" });
+        document.getElementById(`journal-${id}`).remove();
+      }
+    </script>
+  </body>
+</html>
